@@ -231,7 +231,14 @@ def galaxy_buds_head_tracking_thread(mac_address, rfcomm_port, data_queue, stop_
     except bluetooth.BluetoothError as e:
         print(f"Failed to connect to Galaxy Buds: {e}")
     except Exception as e:
-        print(f"An unexpected error occurred in the head tracking thread: {e}")
+        if "Only one usage of each socket address" in str(e):
+            print(
+                "\nCritical Error: A connection attempt failed because another application is already using this Bluetooth port.")
+            print(
+                "Please ensure the official Galaxy Buds app or any other program using Bluetooth is completely closed.")
+            print("You may need to restart your PC's Bluetooth service or reboot the computer to free the port.")
+        else:
+            print(f"An unexpected error occurred in the head tracking thread: {e}")
     finally:
         sock.close()
         print("Galaxy Buds head tracking connection closed.")
@@ -343,7 +350,7 @@ async def main():
     print("Waiting for head tracking connection and initial data...")
     start_wait_time = time.time()
     while not stop_event.is_set() and (time.time() - start_wait_time < 15) and head_orientation_queue.empty():
-        await asyncio.sleep(0.5)
+        time.sleep(0.5)
 
     if not head_tracking_thread.is_alive() or head_orientation_queue.empty():
         print("Head tracking connection failed or no valid data received within timeout. Exiting.")
@@ -364,7 +371,7 @@ async def main():
             print(f"Audio stream started. Playing '{os.path.basename(MUSIC_FILE_PATH)}' with spatial audio.")
             print("Press Ctrl+C to stop.")
             while stream.active and not stop_event.is_set():
-                await asyncio.sleep(0.1)
+                time.sleep(0.1)
     except Exception as e:
         print(f"An error occurred with the audio stream: {e}")
     finally:
